@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaunchMate AI</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; background: #f6f7f9; color: #111; }
+  main { max-width: 720px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.4rem; }
+  #log { background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 12px; min-height: 280px; max-height: 60vh; overflow-y: auto; }
+  .msg { margin: 8px 0; padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; }
+  .user { background: #0b5fff; color: #fff; margin-left: 15%; }
+  .bot { background: #eef0f4; margin-right: 15%; }
+  a.msg { display: block; color: #0b3fb3; font-weight: bold; }
+  form { display: flex; gap: 8px; margin-top: 12px; }
+  input { flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #555; border-radius: 8px; }
+  button { padding: 12px 20px; font-size: 1rem; border: 0; border-radius: 8px; background: #0b5fff; color: #fff; cursor: pointer; }
+  button:disabled { background: #7a8aa8; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LaunchMate AI</h1>
+  <p>Tell me about your business idea in Telugu, Hindi or English, and I will help you pick a name, check the domain and preview your website.</p>
+  <div id="log" role="log" aria-live="polite"></div>
+  <form id="f">
+    <label for="q" style="position:absolute;left:-9999px">Your message</label>
+    <input id="q" maxlength="500" placeholder="e.g. I sell homemade pickles in Vijayawada" autocomplete="off" required>
+    <button id="b" type="submit">Send</button>
+  </form>
+<p><a href="/contact.html">Contact us</a></p></main>
+<script>
+  const log = document.getElementById("log");
+  const f = document.getElementById("f");
+  const q = document.getElementById("q");
+  const b = document.getElementById("b");
+  const sessionId = crypto.randomUUID();
+
+  function add(text, who) {
+    const d = document.createElement("div");
+    d.className = "msg " + who;
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addLink(id) {
+    const a = document.createElement("a");
+    a.href = "/site/" + id;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = "Open website preview";
+    a.className = "msg bot";
+    log.appendChild(a);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = q.value.trim();
+    if (!text) return;
+    q.value = "";
+    add(text, "user");
+    b.disabled = true;
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, message: text })
+      });
+      const data = await r.json();
+      add(r.ok ? data.reply : (data.error || "Error"), "bot");
+      if (r.ok && Array.isArray(data.siteIds)) data.siteIds.forEach(addLink);
+    } catch {
+      add("Network error. Please try again.", "bot");
+    }
+    b.disabled = false;
+    q.focus();
+  });
+</script>
+</body>
+</html>
+

@@ -1,0 +1,8 @@
+.env
+node_modules
+app.zip
+guide-*.txt
+zipcheck
+agent.mjs
+test.mjs
+test-pat.mjs
